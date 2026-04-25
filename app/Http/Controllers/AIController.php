@@ -20,12 +20,16 @@ class AIController extends Controller
     public function __invoke(Request $request)
     {
         $request->validate([
-            'prompt' => 'required|string'
+            'prompt' => 'required|string',
+            'history' => 'nullable|array',
         ]);
 
         $prompt = $request->input('prompt');
 
-        $response = $this->geminiService->generateText($prompt);
+        $response = $this->geminiService->chatWithHistory(
+            $request->prompt,
+            $request->history ?? []
+        );
 
         return response()->json([
             'message' => 'success',
