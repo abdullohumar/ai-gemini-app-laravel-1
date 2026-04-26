@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use Exception;
+use Gemini\Data\Blob;
 use Gemini\Data\Content;
+use Gemini\Enums\MimeType;
 use Gemini\Enums\Role;
 use Gemini\Laravel\Facades\Gemini;
 
@@ -58,6 +60,28 @@ class GeminiService
             return $response->text();
         } catch (Exception $e) {
             return "Error Detail: " . $e->getMessage();
+        }
+    }
+
+    public function analyzeImage(string $prompt, string $imagePath): string
+    {
+        try {
+            // 1. Baca gambar dari storage/path
+            $imageData = base64_encode(file_get_contents($imagePath));
+
+            // 2. Bungkus gambar dengan Blob
+            // Sesuaikan Minetype dengan file (image/jpeg, image/png)
+            $imageBlob = new Blob(
+                mimeType: MimeType::IMAGE_JPEG,
+                data: $imageData
+            );
+            
+            // 3. Kirim prompt dan gambar sekaligus
+            $result = Gemini::generativeModel('gemini-2.5-flash')->generateContent([$prompt, $imageBlob]);
+
+            return $result->text();
+        } catch (Exception $e) {
+            return "Error:".$e->getMessage();
         }
     }
 }
