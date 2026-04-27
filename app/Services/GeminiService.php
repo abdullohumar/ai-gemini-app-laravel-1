@@ -43,13 +43,13 @@ class GeminiService
             // 1. Mapping raw array history menjadi objek Content
             $formattedHistory = collect($history)->map(function ($item) {
                 return Content::parse(
-                    $item['parts'], 
+                    $item['parts'],
                     Role::tryFrom($item['role']) ?? Role::USER
                 );
             })->toArray();
 
             $systemText = "Anda adalah asisten teknis Laravel yang ramah.";
-            
+
             // 2. Gunakan history yang sudah diformat
             $chat = Gemini::generativeModel('gemini-2.5-flash')
                 ->withSystemInstruction(Content::parse($systemText))
@@ -63,25 +63,24 @@ class GeminiService
         }
     }
 
-    public function analyzeImage(string $prompt, string $imagePath): string
+    // Ubah parameter dari $imagePath menjadi $imageRawData
+    public function analyzeImage(string $prompt, $imageRawData): string
     {
         try {
-            // 1. Baca gambar dari storage/path
-            $imageData = base64_encode(file_get_contents($imagePath));
+            // 1. Langsung encode biner yang dikirim dari controller
+            $imageData = base64_encode($imageRawData);
 
-            // 2. Bungkus gambar dengan Blob
-            // Sesuaikan Minetype dengan file (image/jpeg, image/png)
             $imageBlob = new Blob(
                 mimeType: MimeType::IMAGE_JPEG,
                 data: $imageData
             );
-            
-            // 3. Kirim prompt dan gambar sekaligus
-            $result = Gemini::generativeModel('gemini-2.5-flash')->generateContent([$prompt, $imageBlob]);
+
+            $result = Gemini::generativeModel('gemini-2.5-flash')
+                ->generateContent([$prompt, $imageBlob]);
 
             return $result->text();
         } catch (Exception $e) {
-            return "Error:".$e->getMessage();
+            return "Error: " . $e->getMessage();
         }
     }
 }

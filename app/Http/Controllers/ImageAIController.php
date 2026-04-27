@@ -5,35 +5,34 @@ namespace App\Http\Controllers;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 
-class AIController extends Controller
+class ImageAIController extends Controller
 {
-    // Kita simpan service di properti class
     protected $geminiService;
 
-    // Recursive Learning: Dependency Injection
-    // Kita menyuntikkan GeminiService langsung ke constructor
     public function __construct(GeminiService $geminiService)
     {
         $this->geminiService = $geminiService;
-    } 
+    }
 
     public function __invoke(Request $request)
     {
         $request->validate([
             'prompt' => 'required|string',
-            'history' => 'nullable|array',
+            'image'  => 'required|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $prompt = $request->input('prompt');
+        // AMAN: Langsung ambil biner gambarnya tanpa pusing cari path-nya
+        $imageRawData = $request->file('image')->get();
 
-        $response = $this->geminiService->chatWithHistory(
+        // Kirim binernya ke service
+        $response = $this->geminiService->analyzeImage(
             $request->prompt,
-            $request->history ?? []
+            $imageRawData
         );
 
         return response()->json([
             'status' => 'success',
-            'data' => $response,
+            'data' => $response
         ]);
     }
 }
